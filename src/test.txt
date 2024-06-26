@@ -1,0 +1,88 @@
+import { useState } from 'react';
+import './App.css';
+
+function App() {
+  const [count, setCount] = useState(0);
+  const [newTodo, setNewTodo] = useState('');
+  const [todos, setTodos] = useState([
+    { id: 1, title: "To do 1", complete: true },
+    { id: 2, title: "To do 2", complete: true },
+    { id: 3, title: "To do 3", complete: true }
+  ]);
+  const [editingId, setEditingId] = useState(null);
+  const [editingValue, setEditingValue] = useState('');
+
+  const handClick = () => {
+    setCount(count + 1);
+  };
+
+  const setTodoValue = (data:any) => {
+    setNewTodo(data);
+  };
+
+  const handleAddTodo = () => {
+    if (newTodo.trim() === '') return;
+    const todo = { id: todos.length + 1, title: newTodo, complete: true };
+    setTodos([...todos, todo]);
+    setNewTodo('');
+  };
+
+  const handleDeleteTodo = (id:any) => {
+    setTodos(todos.filter(todo => todo.id !== id));
+  };
+
+  const handleEditTodo = (id:any, title:any) => {
+    setEditingId(id);
+    setEditingValue(title);
+  };
+
+  const handleSaveTodo = (id:any) => {
+    setTodos(todos.map(todo => (todo.id === id ? { ...todo, title: editingValue } : todo)));
+    setEditingId(null);
+    setEditingValue('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditingValue('');
+  };
+
+  return (
+    <>
+      <input
+        type='text'
+        value={newTodo}
+        onChange={(e) => setTodoValue(e.target.value)}
+        placeholder="Nhập công việc cần làm"
+      />
+      <button onClick={handleAddTodo}>Thêm vào danh sách</button>
+      <ul>
+        {todos.map(todo => (
+          <li key={todo.id}>
+            {editingId === todo.id ? (
+              <>
+                <input
+                  type='text'
+                  value={editingValue}
+                  onChange={(e) => setEditingValue(e.target.value)}
+                />
+                <button onClick={() => handleSaveTodo(todo.id)}>Lưu</button>
+                <button onClick={handleCancelEdit}>Cancel</button>
+              </>
+            ) : (
+              <>
+                {todo.title}
+                <button onClick={() => handleEditTodo(todo.id, todo.title)}>Sửa</button>
+                <button onClick={() => handleDeleteTodo(todo.id)}>Xóa</button>
+              </>
+            )}
+          </li>
+        ))}
+      </ul>
+      {count}
+      <button onClick={handClick}>Thay đổi state</button>
+    </>
+  );
+}
+
+export default App;
