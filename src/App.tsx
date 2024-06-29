@@ -1,76 +1,128 @@
-import { useState } from 'react'
-import './App.css'
+import { useEffect, useState } from 'react';
+import './App.css';
+
+
+interface ITodo {
+  id?: number | string;
+  title: string;
+  complete: boolean;
+}
 
 function App() {
-  const [count, setCount] = useState(0)
-  const [newtoDo, setNewToDo] = useState("")
-  const [toDo, setToDo] = useState([
-    { id: 1, title: "Todo 1", complete: true },
-    { id: 2, title: "Todo 2", complete: true },
-    { id: 3, title: "Todo 3", complete: true },
-  ])
+  const [todos, setTodos] = useState<ITodo[]>([]);
+  const [newTodo, setNewTodo] = useState('');
+  const [editTodo, setEditTodo] = useState<{ id?: number | string, title: string }>({ id: undefined, title: '' });
 
+  useEffect(() => {
+    fetch("http://localhost:3000/todos")
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+        setTodos(data);
+      });
+  }, []);
 
-  const handleClick = () => {
-    setCount(count + 1);
-  }
-  const handleDown = () => {
-    setCount(count - 1);
-  }
-  const setToDoValue = (data: any) => {
-    setNewToDo(data);
-  }
-  const handleAddTodo = () => {
-    const todo = { id: toDo.length + 1, title: newtoDo, complete: true };
-    setToDo([...toDo, todo]);
-  }
-  const handleDelete = (id: any) => {
-    if (window.confirm('Ok ???')) {
-      const newToDo = toDo.filter((data) => data.id !== id);
-      setToDo(newToDo);
+  const handleClickAdd = () => {
+    const data: ITodo = {
+      title: newTodo,
+      complete: true
+    };
+    fetch("http://localhost:3000/todos", {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: { "Content-Type": "application/json" }
+    }).then(response => response.json())
+      .then((data: ITodo) => {
+        setTodos([...todos, data]);
+        setNewTodo(''); // Clear input after adding
+        alert("Thêm mới thành công");
+      });
+  };
+
+  const setNewTodoValue = (value: string) => {
+    setNewTodo(value);
+  };
+
+  const setEditTodoValue = (id: number | string, value: string) => {
+    setEditTodo({
+      id: id,
+      title: value
+    });
+  };
+
+  const onDelete = (id: number | string) => {
+    if (confirm("Are you sure you want to delete")) {
+      fetch("http://localhost:3000/todos/" + id, {
+        method: "DELETE"
+      }).then(() => {
+        const newTodos = todos.filter(todo => todo.id !== id);
+        setTodos(newTodos);
+        alert("Xóa thành công");
+      });
     }
-  }
-  const handleUpdate = (id: any) => {
-    alert(id)
-  }
+  };
 
+  const changeStatus = (id: number | string) => {
+    const updatedTodos = todos.map(todo => {
+      if (todo.id === id) {
+        const updatedTodo = { ...todo, complete: !todo.complete };
+        fetch("http://localhost:3000/todos/" + id, {
+          method: "PUT",
+          body: JSON.stringify(updatedTodo),
+          headers: { "Content-Type": "application/json" }
+        }).then(response => response.json())
+          .then(() => {
+            setTodos(prevTodos => prevTodos.map(t => t.id === id ? updatedTodo : t));
+          });
+      }
+      return todo;
+    });
+  };
+
+  const updateTodo = (id: number | string) => {
+    const updatedTodo = { ...todos.find(todo => todo.id === id)!, title: editTodo.title, complete: true };
+    fetch("http://localhost:3000/todos/" + id, {
+      method: "PUT",
+      body: JSON.stringify(updatedTodo),
+      headers: { "Content-Type": "application/json" }
+    }).then(response => response.json())
+      .then(() => {
+        setTodos(prevTodos => prevTodos.map(t => t.id === id ? updatedTodo : t));
+        setEditTodo({ id: undefined, title: '' });
+      });
+  };
 
   return (
     <>
-      <div className="mb-3">
-        <label htmlFor="title" className="form-label">Title</label>
-        <input onChange={(e) => setToDoValue(e.target.value)} type="text" className="form-control" name='title' id="title" />
-      </div>
-      <button onClick={handleAddTodo} type="submit" className="btn btn-primary mb-3">Submit</button>
-      <table className="table">
-        <thead>
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">Title</th>
-            <th scope="col">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {toDo.map((data, index) => (
-            <tr>
-              <th scope="row" key={index}>{data.id}</th>
-              <td>{data.title}</td>
-              <td>
-                <button onClick={() => handleDelete(data.id)} className='btn btn-danger'>Delete</button>
-                <button onClick={() => handleUpdate(data.id)} className='btn btn-warning'>Update</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-
-      <h1>Em Hank</h1>
-      <h1>{count}</h1>
-      <button onClick={handleClick}>Up</button>
-      <button onClick={handleDown}>Down</button>
+      <input
+        type='text'
+        value={newTodo}
+        onChange={(e) => setNewTodoValue(e.target.value)}
+      />
+      <button onClick={handleClickAdd}>Thêm danh sách</button>
+      <ul>
+        {todos.map((todo: ITodo) => (
+          todo.complete ? (
+            <li key={todo.id}>
+              {todo.title}
+              <button onClick={() => changeStatus(todo.id!)}>Sửa</button>
+              <button onClick={() => onDelete(todo.id!)}>Xóa</button>
+            </li>
+          ) : (
+            <li key={todo.id}>
+              <input
+                type='text'
+                value={editTodo.id === todo.id ? editTodo.title : todo.title}
+                onChange={(e) => setEditTodoValue(todo.id!, e.target.value)}
+              />
+              <button onClick={() => updateTodo(todo.id!)}>Lưu</button>
+              <button onClick={() => changeStatus(todo.id!)}>Hủy</button>
+            </li>
+          )
+        ))}
+      </ul>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
