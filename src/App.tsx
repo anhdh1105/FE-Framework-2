@@ -1,17 +1,16 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, Route, Routes, useNavigate } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import './App.css';
 import { IProduct } from './interfaces/products';
-import Edit from './pages/Edit';
 import AddProduct from './pages/add';
+import EditProduct from './pages/Edit';
 
 
 
 function App() {
-  const navigate = useNavigate;
-  const { register, handleSubmit, reset } = useForm();
+  // const { register, handleSubmit, reset } = useForm();
   const [products, setProduct] = useState<IProduct[]>([]);
   const [flag, setFlag] = useState<number | string>(0);
   useEffect(() => {
@@ -27,15 +26,18 @@ function App() {
     })()
   }, [])
 
-  const onSubmit = async (product: any) => {
+  const onAdd = async (product: FormData) => {
+    // console.log(data);
     try {
-      const { data } = await axios.post(`http://localhost:3000/products`, product);
-      setProduct([...product, data]);
-      console.log(data);
+      const { data } = await axios.post("http://localhost:3000/products", product)
+      setProduct([...products, data])
+      alert("Thêm mới thành công")
     } catch (error) {
-      console.log(error);
+      alert(error)
     }
+
   }
+
   const handleDelete = async (id: any) => {
     try {
       await axios.delete(`http://localhost:3000/products/${id}`);
@@ -53,7 +55,7 @@ function App() {
       const newproduct = products.map(product => (product.id === flag) ? data : product)
       setProduct(newproduct)
       alert("Cập nhật thành công")
-      setFlag(0)
+      setFlag(0);
     } catch (error) {
       alert(error)
     }
@@ -61,14 +63,17 @@ function App() {
   }
   const onEdit = (id: number | string) => {
     setFlag(id);
-    const [product] = products.filter(p => p.id == id);
-    reset({
-      name: product.name,
-      image: product.image,
-      price: product.price,
-      category: product.category
-    })
+    // const [product] = products.filter(p => p.id == id);
+    // // reset({
+    // //   name: product.name,
+    // //   image: product.image,
+    // //   price: product.price,
+    // //   category: product.category
+    // // })
   }
+  const onCancelEdit = () => {
+    setFlag(0);
+  };
 
 
 
@@ -76,7 +81,7 @@ function App() {
     <Routes>
       <Route path="/" element={
         <>
-          <AddProduct products={products} setProduct={setProduct} />
+          <AddProduct onAdd={onAdd} />
           <h1>List Product</h1>
           <table className="table table-striped table-dark">
             <thead>
@@ -92,30 +97,7 @@ function App() {
             <tbody>
               {products.map((product: IProduct, index: number) => (
                 (product.id === flag) ?
-                  <div className='bg'>
-                    <tr key={product.id}>
-                      <td colSpan={6}><form onSubmit={handleSubmit(onUpdate)}>
-                        <div className="mb-3">
-                          <label className="form-label">Name</label>
-                          <input type="text" className="form-control" {...register('name')} />
-                        </div>
-                        <div className="mb-3">
-                          <label className="form-label">Price</label>
-                          <input type="number" className="form-control" {...register('price')} />
-                        </div>
-                        <div className="mb-3">
-                          <label className="form-label">Image</label>
-                          <input type="text" className="form-control" {...register('image')} />
-                        </div>
-                        <div className="mb-3">
-                          <label className="form-label">Category</label>
-                          <input type="text" className="form-control" {...register('category')} />
-                        </div>
-                        <button type="submit" className="btn btn-primary">Update Product</button>
-                        <button type='button' className='btn btn-danger' onClick={() => setFlag(0)}>Hủy</button>
-                      </form></td>
-                    </tr>
-                  </div>
+                  <EditProduct product={product} onUpdate={onUpdate} onCancel={onCancelEdit} />
                   :
                   <tr key={product.id}>
                     <th scope="row">{index + 1}</th>
@@ -134,9 +116,7 @@ function App() {
           </table>
         </>
       } />
-      <Route path="/edit/:id" element={<Edit />} />
     </Routes>
   );
 }
-
 export default App;

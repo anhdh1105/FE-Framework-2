@@ -1,25 +1,16 @@
-import React from 'react'
 import { useForm } from 'react-hook-form'
-import { IProduct } from '../interfaces/products'
-import axios from 'axios'
 
 type Props = {
-    products: IProduct[],
-    setProduct: (data: IProduct[]) => void
-    // onAdd:(data:FormData)=>void;
+    // products: IProduct[],
+    // setProduct: (data: IProduct[]) => void
+    onAdd: (data: FormData) => void;
 }
 
-function AddProduct({ products, setProduct }: Props) {
+function AddProduct({ onAdd }: Props) {
     const { register, handleSubmit, reset } = useForm<any>()
     const onSubmit = async (product: FormData) => {
-        try {
-            const { data } = await axios.post(`http://localhost:3000/products`, product)
-            setProduct([...products, data]);
-            alert('Success');
-            reset();
-        } catch (error) {
-            alert(error)
-        }
+        onAdd(product);
+        reset();
     }
     return (
         <>
@@ -48,5 +39,4 @@ function AddProduct({ products, setProduct }: Props) {
 
     )
 }
-
 export default AddProduct
