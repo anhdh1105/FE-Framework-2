@@ -11,7 +11,7 @@ type Props = {
 function EditProduct({ product, onUpdate, onCancel }: Props) {
   const { register, handleSubmit, reset, setValue } = useForm<any>({
     defaultValues: product
-  });
+  }); 
 
   useEffect(() => {
     setValue("name", product.name);
